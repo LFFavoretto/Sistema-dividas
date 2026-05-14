@@ -1,0 +1,6 @@
+@Sistema_dividas_HostAddress = http://localhost:5177
+
+GET {{Sistema_dividas_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
