@@ -1,0 +1,21 @@
+CREATE DATABASE emporio CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci;
+
+USE emporio;
+
+CREATE TABLE clientes (
+id INT AUTO_INCREMENT PRIMARY KEY,
+nome VARCHAR(100) NOT NULL,
+cpf VARCHAR(14) NOT NULL UNIQUE,
+data_nascimento DATETIME NOT NULL,
+email VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE dividas (
+id INT AUTO_INCREMENT PRIMARY KEY,
+id_cliente INT NOT NULL,
+valor DECIMAL(10,2) NOT NULL,
+pago BOOLEAN NOT NULL,
+data_criacao DATE NOT NULL,
+data_pagamento DATE,
+FOREIGN KEY(id_cliente) REFERENCES clientes(id)
+);
