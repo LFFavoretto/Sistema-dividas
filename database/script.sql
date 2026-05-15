@@ -15,7 +15,7 @@ id INT AUTO_INCREMENT PRIMARY KEY,
 id_cliente INT NOT NULL,
 valor DECIMAL(10,2) NOT NULL,
 pago BOOLEAN NOT NULL,
-data_criacao DATE NOT NULL,
-data_pagamento DATE,
+data_criacao DATETIME NOT NULL,
+data_pagamento DATETIME,
 FOREIGN KEY(id_cliente) REFERENCES clientes(id)
 );
