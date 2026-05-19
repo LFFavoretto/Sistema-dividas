@@ -1,6 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Sistema_dividas.Models
+namespace SistemaDividasConsole.Models
 {
     public class Cliente
     {
@@ -17,7 +22,7 @@ namespace Sistema_dividas.Models
         [Required]
         public DateTime DataNascimento { get; set; }
 
-        public int Idade 
+        public int Idade
         {
             get
             {
@@ -39,5 +44,14 @@ namespace Sistema_dividas.Models
         public string Email { get; set; }
 
         public List<Divida> Dividas { get; set; } = new();
+
+        public void PrintDados()
+        {
+            Console.WriteLine("Nome: {0}", Nome);
+            Console.WriteLine("CPF: {0}", Cpf);
+            Console.WriteLine("Data Nascimento: {0}", DataNascimento.ToString("dd/MM/yyyy"));
+            Console.WriteLine("Idade: {0}", Idade);
+            Console.WriteLine("Email: {0}", Email);
+        }
     }
 }
