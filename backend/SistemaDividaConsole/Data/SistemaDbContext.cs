@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SistemaDividasConsole.Models;
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,13 @@ namespace SistemaDividasConsole.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySQL(Environment.GetEnvironmentVariable("ConnectionStrings__Default"));
-            base.OnConfiguring(optionsBuilder);
+            var builder = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.Development.json")
+                .Build();
+
+            var connectionString = builder.GetConnectionString("Default");
+
+            optionsBuilder.UseMySQL(connectionString);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
