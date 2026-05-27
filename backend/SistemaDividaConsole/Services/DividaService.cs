@@ -1,4 +1,5 @@
-﻿using SistemaDividasConsole.Models;
+﻿using SistemaDividasConsole.Data;
+using SistemaDividasConsole.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,12 +11,12 @@ namespace SistemaDividasConsole.Services
 {
     public class DividaService
     {
-        //private readonly EmporioDbContext context;
+        private readonly SistemaDbContext context;
 
-        //public DividaService(EmporioDbContext context)
-        //{
-        //    this.context = context;
-        //}
+        public DividaService(SistemaDbContext context)
+        {
+            this.context = context;
+        }
 
         public bool Validar(Divida divida, out List<ValidationResult> erros)
         {
@@ -31,32 +32,37 @@ namespace SistemaDividasConsole.Services
             {
                 return false;
             }
-
-            foreach (Divida dividasLista in cliente.Dividas)
+            var dividaAberta = context.Dividas.Any(d => d.ClienteId == cliente.Id && !d.Pago);
+            if (dividaAberta)
             {
-                if (!dividasLista.Pago)
-                {
-                    erros.Add(new ValidationResult("Cliente ja tem uma divida em aberto."));
-                    return false;
-                }
+                erros.Add(new ValidationResult("Cliente ja tem uma divida em aberto."));
+                return false;
+                
             }
-            cliente.Dividas.Add(divida);
+            divida.Cliente = cliente;
             divida.DataCriacao = DateTime.Today;
+            divida.Pago = false;
+            context.Dividas.Add(divida);
+            context.SaveChanges();
+            
             return true;
         }
 
         public bool Pagar(Cliente cliente)
         {
-            foreach (Divida dividas in cliente.Dividas)
+            var divida = context.Dividas.FirstOrDefault(d => d.ClienteId == cliente.Id && !d.Pago);
+            
+            if (divida == null)
             {
-                if (dividas.Pago == false)
-                {
-                    dividas.DataPagamento = DateTime.Today;
-                    dividas.Pago = true;
-                    return true;
-                }
+                return false;
             }
-            return false;
+            divida.Pago = true;
+            divida.DataPagamento = DateTime.Today;            
+            context.Dividas.Update(divida);
+            context.SaveChanges();
+            return true;
+
+            
         }
     }
 }

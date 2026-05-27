@@ -16,7 +16,7 @@ namespace SistemaDividasConsole.Models
         public string Nome { get; set; }
 
         [Required(ErrorMessage ="Campo CPF é obrigatório.")]
-        [StringLength(14)]
+        [StringLength(11)]
         [RegularExpression(@"^\d{11}$", ErrorMessage ="CPF Inválido. Use apenas números.")]
         public string Cpf { get; set; }
 
@@ -47,37 +47,6 @@ namespace SistemaDividasConsole.Models
 
         public List<Divida> Dividas { get; set; } = new();
 
-        //public void PrintDados()
-        //{
-        //    Console.WriteLine("Nome: {0}", Nome);
-        //    Console.WriteLine("CPF: {0}", Cpf);
-        //    Console.WriteLine("Data Nascimento: {0}", DataNascimento.ToString("dd/MM/yyyy"));
-        //    Console.WriteLine("Idade: {0}", Idade);
-        //    Console.WriteLine("Email: {0}", Email);
-        //}
-
-        //public void PrintDividasAbertas()
-        //{
-        //    Console.WriteLine("Nome: {0}", Nome);
-        //    Console.WriteLine("Idade: {0}", Idade);
-        //    foreach (Divida divida in Dividas.Where(d => !d.Pago))
-        //    {
-        //        divida.PrintDados();
-        //    }
-        //}
-
-        //public void PrintDividas()
-        //{
-        //    Console.WriteLine("Nome: {0}", Nome);
-        //    Console.WriteLine("CPF: {0}", Cpf);
-        //    Console.WriteLine("Data Nascimento: {0}", DataNascimento.ToString("dd/MM/yyyy"));
-        //    Console.WriteLine("Idade: {0}", Idade);
-        //    Console.WriteLine("Email: {0}", Email);
-        //    foreach (Divida divida in Dividas)
-        //    {
-        //        divida.PrintDados();
-        //    }
-        //}
         
 
     }

@@ -1,4 +1,6 @@
 ﻿using MySqlX.XDevAPI;
+using SistemaDividasConsole.Data;
+using SistemaDividasConsole.Dtos;
 using SistemaDividasConsole.Models;
 using System;
 using System.Collections.Generic;
@@ -7,19 +9,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDividasConsole.Services
 {
     public class ClienteService
     {
-        //private readonly EmporioDbContext context;
+        private readonly SistemaDbContext context;
 
-        //public ClienteService(EmporioDbContext context)
-        //{
-        //    this.context = context;
-        //}
-
-        private readonly List<Cliente> clientes = new();
+        public ClienteService(SistemaDbContext context)
+        {
+            this.context = context;
+        }
 
         public bool Validar(Cliente cliente, out List<ValidationResult> erros)
         {
@@ -27,15 +28,6 @@ namespace SistemaDividasConsole.Services
             var validation = new ValidationContext(cliente);
             erros = new List<ValidationResult>();
             Validator.TryValidateObject(cliente, validation, erros, true);
-            return erros.Count == 0;
-        }
-
-        public bool Criar(Cliente cliente, out List<ValidationResult> erros)
-        {
-            if (!Validar(cliente, out erros))
-            {
-                return false;
-            }
 
             if (cliente.DataNascimento > DateTime.Today)
             {
@@ -48,84 +40,81 @@ namespace SistemaDividasConsole.Services
                 erros.Add(new ValidationResult("Idade insuficiente. Cliente deve ter mais de 16 anos."));
                 return false;
             }
+            return erros.Count == 0;
+        }
 
-            foreach (Cliente clienteLista in clientes)
+        public bool Criar(Cliente cliente, out List<ValidationResult> erros)
+        {
+            if (!Validar(cliente, out erros))
             {
-                if (clienteLista.Cpf == cliente.Cpf)
-                {
-                    erros.Add(new ValidationResult("Cliente já cadastrado"));
-                    return false;
-                }
+                return false;
+            }           
+            
+            if (context.Clientes.Any(c => c.Cpf == cliente.Cpf))
+            {
+                erros.Add(new ValidationResult("Cliente já cadastrado"));
+                return false;
             }
+            
 
-            clientes.Add(cliente);
+            context.Clientes.Add(cliente);
+            context.SaveChanges();
             return true;
         }
 
         public List<Cliente> Listar()
         {
-            return clientes;
+            return context.Clientes.ToList();
         }
 
-        public List<Cliente> ListarDividas()
+        public List<Cliente> ListarDividas(int pagina)
         {
-            return clientes.Where(c => c.Dividas.Any(d => !d.Pago)).ToList();
+            return Ordenar(pagina).Where(c => c.Dividas.Any(d => !d.Pago)).ToList();
         }
 
         public List<Cliente> Buscar (string nome)
         {
-            var busca = clientes.Where(n => n.Nome.ToLower().Contains(nome.ToLower())).ToList();
+            var busca = context.Clientes.Include(c => c.Dividas).Where(n => n.Nome.ToLower().Contains(nome.ToLower())).ToList();
             return busca;
         }   
 
         public Cliente BuscaCpf(string cpf)
         {
-            return clientes.FirstOrDefault(c => c.Cpf == cpf);
+            return context.Clientes.Include(c => c.Dividas).FirstOrDefault(c => c.Cpf == cpf);
         }
         
-        public bool Atualizar (string cpf, Cliente clienteAtualizado, out List<ValidationResult> errosAtualizar)
+        public bool Atualizar (string cpf, UpdateClienteDto clienteDto, out List<ValidationResult> errosAtualizar)
         {
             errosAtualizar = new List<ValidationResult>();
-
-            if (!Validar(clienteAtualizado, out errosAtualizar))
+            var cliente = BuscaCpf(cpf);
+            if (cliente != null)
+            {
+                cliente.Nome = clienteDto.Nome;
+                cliente.Email = clienteDto.Email;
+                cliente.DataNascimento = clienteDto.DataNascimento;
+            }
+            else
+            {
+                errosAtualizar.Add(new ValidationResult("Cliente não encontrado"));
+                return false;
+            }
+            if (!Validar(cliente, out errosAtualizar))
             {
                 return false;
             }
-
-            if (clienteAtualizado.DataNascimento > DateTime.Today)
-            {
-                errosAtualizar.Add(new ValidationResult("Data de nascimento inválida."));
-                return false;
-            }
-
-            if (clienteAtualizado.Idade < 16)
-            {
-                errosAtualizar.Add(new ValidationResult("Idade insuficiente. Cliente deve ter mais de 16 anos."));
-                return false;
-            }
-
-            foreach (Cliente cliente in clientes)
-            {
-                if (cliente.Cpf == cpf)
-                {
-                    cliente.Nome = clienteAtualizado.Nome;
-                    cliente.Email = clienteAtualizado.Email;
-                    cliente.DataNascimento = clienteAtualizado.DataNascimento;
-
-                    return true;
-                }                
-            }            
-            errosAtualizar.Add(new ValidationResult("Cliente não encontrado"));
-            return false;
+            context.Clientes.Update(cliente);
+            context.SaveChanges();
+            return true;            
         }
 
         public bool Excluir (string cpf, out List<ValidationResult> errosExcluir)
         {
             errosExcluir = new List<ValidationResult>();
-            var clienteEncontrado = clientes.FirstOrDefault(c => c.Cpf == cpf);
+            var clienteEncontrado = context.Clientes.FirstOrDefault(c => c.Cpf == cpf);
             if (clienteEncontrado != null)
             {
-                clientes.Remove(clienteEncontrado);
+                context.Clientes.Remove(clienteEncontrado);
+                context.SaveChanges();
                 return true;
             }
             errosExcluir.Add(new ValidationResult("Cliente não encontrado"));
@@ -139,7 +128,7 @@ namespace SistemaDividasConsole.Services
             {
                 pagina = 1;
             }
-            var ordenados = clientes.OrderByDescending(c => DividaAberta(c))
+            var ordenados = context.Clientes.Include(c => c.Dividas).AsEnumerable().OrderByDescending(c => DividaAberta(c))
                 .Skip((pagina - 1) * limite)
                 .Take(limite)
                 .ToList();
@@ -154,6 +143,11 @@ namespace SistemaDividasConsole.Services
                 return dividaAberta.Valor;
             }
             return 0;
+        }
+
+        public decimal TotalDividasAbertas(List<Cliente> clientes)
+        {
+            return clientes.Sum(c => c.Dividas.FirstOrDefault(d => !d.Pago).Valor);
         }
     }
 }

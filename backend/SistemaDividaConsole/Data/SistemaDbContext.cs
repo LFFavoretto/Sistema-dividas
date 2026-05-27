@@ -41,9 +41,10 @@ namespace SistemaDividasConsole.Data
             modelDivida.Property(e => e.Id).HasColumnName("id");
             modelDivida.Property(e => e.Valor).HasColumnName("valor");
             modelDivida.Property(e => e.Pago).HasColumnName("pago");
-            modelDivida.Property(e => e.DataCriacao).HasColumnName("data_criação");
+            modelDivida.Property(e => e.DataCriacao).HasColumnName("data_criacao");
             modelDivida.Property(e => e.DataPagamento).HasColumnName("data_pagamento");
             modelDivida.HasOne(e => e.Cliente).WithMany(c => c.Dividas).HasForeignKey(e => e.ClienteId);
+            modelDivida.Property(e => e.ClienteId).HasColumnName("id_cliente");
             modelDivida.HasKey(e => e.Id);
 
             base.OnModelCreating(modelBuilder);
