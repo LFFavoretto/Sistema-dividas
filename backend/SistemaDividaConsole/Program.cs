@@ -1,4 +1,5 @@
 ﻿using ConsoleTables;
+using MySqlX.XDevAPI;
 using SistemaDividasConsole.Data;
 using SistemaDividasConsole.Dtos;
 using SistemaDividasConsole.Models;
@@ -39,6 +40,7 @@ while (true)
         Console.WriteLine("Digite uma opção válida");
         continue;
     }
+    Console.Clear();
 
     if (opcao == 1)
     {
@@ -49,7 +51,11 @@ while (true)
         var cpf = Console.ReadLine();
 
         Console.WriteLine("Data Nascimento: ");
-        var data_nascimento = DateTime.Parse(Console.ReadLine());
+        if (!DateTime.TryParse(Console.ReadLine(), out var dataNascimento))
+        {
+            Console.WriteLine("Data inválida");
+            continue;
+        }
 
         Console.WriteLine("Email: ");
         var email = Console.ReadLine();
@@ -59,7 +65,7 @@ while (true)
 
         cliente.Nome = nome;
         cliente.Cpf = cpf;
-        cliente.DataNascimento = data_nascimento;
+        cliente.DataNascimento = dataNascimento;
         cliente.Email = email;
 
         var sucesso = service.Criar(cliente, out var erros);
@@ -74,7 +80,7 @@ while (true)
         {
             Console.WriteLine("Cliente cadastrado com sucesso");
         }
-
+        
     }
     else if (opcao == 2)
     {
@@ -94,7 +100,11 @@ while (true)
         Console.WriteLine("Digite o email: ");
         var novoEmail = Console.ReadLine();
         Console.WriteLine("Digite a data de nascimento");
-        var novoNascimento = DateTime.Parse(Console.ReadLine());
+        if (!DateTime.TryParse(Console.ReadLine(), out var novoNascimento))
+        {
+            Console.WriteLine("Data inválida");
+            continue;
+        }
 
 
         UpdateClienteDto clienteAtualizado = new UpdateClienteDto();
@@ -139,25 +149,44 @@ while (true)
 
     else if (opcao == 4)
     {
-        var clientes = service.Listar();
-        if (clientes.Count == 0)
+        int pagina = 1;
+        while (true) 
         {
-            Console.WriteLine("Nenhum cliente cadastrado.");
-        }
-        else
-        {
-            var table = new ConsoleTable("Nome", "CPF", "Data Nascimento", "Idade", "Email");
-            foreach (var cliente in clientes)
+            var clientes = service.Listar(pagina);
+            if (clientes.Count == 0)
             {
-                table.AddRow(
-                    cliente.Nome,
-                    cliente.Cpf,
-                    cliente.DataNascimento.ToString("dd/MM/yyyy"),
-                    cliente.Idade,
-                    cliente.Email
-                    );
+                if (pagina == 1)
+                {
+                    Console.WriteLine("Nenhum cliente cadastrado.");
+                }
+                break;
             }
-            table.Write();
+
+            else
+            {
+                Console.WriteLine($"----- PÁGINA {pagina} -----");
+
+                var table = new ConsoleTable("ID Cliente", "Nome", "CPF", "Data Nascimento", "Idade", "Email");
+                foreach (var cliente in clientes)
+                {
+                    table.AddRow(
+                        cliente.Id,
+                        cliente.Nome,
+                        cliente.Cpf,
+                        cliente.DataNascimento.ToString("dd/MM/yyyy"),
+                        cliente.Idade,
+                        cliente.Email
+                        );
+                }
+                table.Write();
+                Console.WriteLine();
+                Console.WriteLine("Pressione ENTER para próxima página.");
+                Console.ReadKey();
+
+                pagina++;
+
+                Console.WriteLine();
+            }
         }        
     }
 
@@ -174,20 +203,20 @@ while (true)
                     Console.WriteLine("Nenhum cliente com dívida em aberto encontrado.");
                 }
                 break;
-            }
-
-            Console.Clear();
+            }    
 
             Console.WriteLine($"----- PÁGINA {pagina} -----");
 
-            var table = new ConsoleTable("Nome", "Idade", "Valor", "Data Registro", "Situação");
+            var table = new ConsoleTable("ID Cliente","Nome", "Idade", "ID Divida", "Valor", "Data Registro", "Situação");
             foreach (var cliente in clientes)
             {
                 foreach (var divida in cliente.Dividas.Where(d => !d.Pago))
                 {
                     table.AddRow(
+                        cliente.Id,
                         cliente.Nome,
                         cliente.Idade,
+                        divida.Id,
                         divida.Valor.ToString("C"),
                         divida.DataCriacao.ToString("dd/MM/yyyy"),
                         "Em aberto"
@@ -197,20 +226,15 @@ while (true)
             table.Write();
 
             Console.WriteLine();
-            Console.WriteLine("Pressione ENTER para próxima página ou ESC para sair.");
-            var tecla = Console.ReadKey();
-
-            if (tecla.Key == ConsoleKey.Escape)
-            {
-                break;
-            }
+            Console.WriteLine("Pressione ENTER para próxima página");
+            Console.ReadKey();
 
             pagina++;
 
-            Console.WriteLine();
-            var total = service.TotalDividasAbertas(clientes);
-            Console.WriteLine($"Total das dívidas: {total:C}\n");
-        }        
+            Console.WriteLine();            
+        }
+        var total = dividaService.TotalDividasAbertas();
+        Console.WriteLine($"Total das dívidas: {total:C}\n");
     }
 
     else if (opcao == 6)
@@ -218,33 +242,74 @@ while (true)
         Console.WriteLine("Digite o nome do cliente.");
         var nome = Console.ReadLine();
 
-        var clientes = service.Buscar(nome);
-        if (clientes.Count == 0)
+        int pagina = 1;
+
+        while (true)
         {
-            Console.WriteLine("Nenhum cliente encontrado");
-        }
-        else
-        {
-            var table = new ConsoleTable("Nome", "CPF", "Data Nascimento", "Idade", "Email", "Valor", "Data Registro", "Situação", "Data Pagamento");
-            foreach (var cliente in clientes)
+            var clientes = service.Buscar(nome, pagina);
+            if (clientes.Count == 0)
             {
-                foreach (var divida in cliente.Dividas)
+                if (pagina == 1)
                 {
-                    table.AddRow(
-                        cliente.Nome,
-                        cliente.Cpf,
-                        cliente.DataNascimento.ToString("dd/MM/yyyy"),
-                        cliente.Idade,
-                        cliente.Email,
-                        divida.Valor.ToString("C"),
-                        divida.DataCriacao.ToString("dd/MM/yyyy"),
-                        divida.Pago ? "Pago" : "Em aberto",
-                        divida.DataPagamento?.ToString("dd/MM/yyyy") ?? ""
-                    );
+                    Console.WriteLine("Nenhum cliente encontrado");
                 }
+                break;
+
             }
-            table.Write();
-        }
+            else
+            {
+                Console.WriteLine($"----- PÁGINA {pagina} -----");
+
+                var table = new ConsoleTable("ID Cliente", "Nome", "CPF", "Nascimento", "Idade", "Email", "ID Divida", "Valor", "Data Registro", "Situação", "Data Pagamento");
+                foreach (var cliente in clientes)
+                {
+                    if (cliente.Dividas.Count == 0)
+                    {
+                        table.AddRow(
+                            cliente.Id,
+                            cliente.Nome,
+                            cliente.Cpf,
+                            cliente.DataNascimento.ToString("dd/MM/yyyy"),
+                            cliente.Idade,
+                            cliente.Email,
+                            "-",
+                            0.ToString("C"),
+                            "-",
+                            "-",
+                            "-"
+                        );
+                    }
+                    else
+                    {
+                        foreach (var divida in cliente.Dividas)
+                        {
+                            table.AddRow(
+                                cliente.Id,
+                                cliente.Nome,
+                                cliente.Cpf,
+                                cliente.DataNascimento.ToString("dd/MM/yyyy"),
+                                cliente.Idade,
+                                cliente.Email,
+                                divida.Id,
+                                divida.Valor.ToString("C"),
+                                divida.DataCriacao.ToString("dd/MM/yyyy"),
+                                divida.Pago ? "Pago" : "Em aberto",
+                                divida.DataPagamento?.ToString("dd/MM/yyyy") ?? ""
+                            );
+                        }
+                    }                        
+                }
+                table.Write();
+
+                Console.WriteLine();
+                Console.WriteLine("Pressione ENTER para próxima página ou ESC para sair.");
+                Console.ReadKey();
+
+                pagina++;
+
+                Console.WriteLine();
+            }
+        }        
     }
 
     else if (opcao == 7)
@@ -261,7 +326,11 @@ while (true)
         else
         {
             Console.WriteLine("Digite o valor da dívida: ");
-            var valor = decimal.Parse(Console.ReadLine());
+            if (!decimal.TryParse(Console.ReadLine(), out var valor))
+            {
+                Console.WriteLine("Digite apenas números");
+                continue;
+            }
 
             Divida divida = new Divida();
             divida.Valor = valor;

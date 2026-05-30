@@ -1,5 +1,4 @@
-﻿using MySqlX.XDevAPI;
-using SistemaDividasConsole.Data;
+﻿using SistemaDividasConsole.Data;
 using SistemaDividasConsole.Dtos;
 using SistemaDividasConsole.Models;
 using System;
@@ -8,7 +7,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace SistemaDividasConsole.Services
@@ -62,9 +60,15 @@ namespace SistemaDividasConsole.Services
             return true;
         }
 
-        public List<Cliente> Listar()
+        public List<Cliente> Listar(int pagina)
         {
-            return context.Clientes.ToList();
+            int limite = 10;
+            if (pagina < 1)
+            {
+                pagina = 1;
+            }
+            return context.Clientes.Skip((pagina - 1) * limite)
+                .Take(limite).ToList();
         }
 
         public List<Cliente> ListarDividas(int pagina)
@@ -72,15 +76,26 @@ namespace SistemaDividasConsole.Services
             return Ordenar(pagina).Where(c => c.Dividas.Any(d => !d.Pago)).ToList();
         }
 
-        public List<Cliente> Buscar (string nome)
+        public List<Cliente> Buscar (string nome, int pagina)
         {
-            var busca = context.Clientes.Include(c => c.Dividas).Where(n => n.Nome.ToLower().Contains(nome.ToLower())).ToList();
-            return busca;
+            int limite = 10;
+            if (pagina < 1)
+            {
+                pagina = 1;
+            }
+            var clientes = context.Clientes.Include(c => c.Dividas).Where(n => n.Nome.ToLower().Contains(nome.ToLower())).Skip((pagina - 1) * limite)
+                .Take(limite).ToList();
+
+            foreach (var cliente in clientes)
+            {
+                cliente.Dividas = cliente.Dividas.OrderByDescending(d => d.DataCriacao).ToList();
+            }
+            return clientes;
         }   
 
-        public Cliente BuscaCpf(string cpf)
+        public Cliente? BuscaCpf(string cpf)
         {
-            return context.Clientes.Include(c => c.Dividas).FirstOrDefault(c => c.Cpf == cpf);
+            return context.Clientes.FirstOrDefault(c => c.Cpf == cpf);
         }
         
         public bool Atualizar (string cpf, UpdateClienteDto clienteDto, out List<ValidationResult> errosAtualizar)
@@ -143,12 +158,7 @@ namespace SistemaDividasConsole.Services
                 return dividaAberta.Valor;
             }
             return 0;
-        }
-
-        public decimal TotalDividasAbertas(List<Cliente> clientes)
-        {
-            return clientes.Sum(c => c.Dividas.FirstOrDefault(d => !d.Pago).Valor);
-        }
-    }
+        }   
+     }
 }
 
