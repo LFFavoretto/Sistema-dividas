@@ -24,7 +24,17 @@ Sistema desenvolvido em C# com .NET 8 para gerenciamento de clientes e dívidas,
 - Entity Framework Core
 - MySQL
 - ConsoleTables
+- 
+## Arquitetura
 
+O projeto está organizado em camadas para separar responsabilidades e facilitar a manutenção do código:
+
+- **Models**: entidades do sistema e regras de validação.
+- **Data**: configuração do banco de dados e mapeamento das entidades.
+- **Services**: implementação das regras de negócio e operações da aplicação.
+- **Dtos**: objetos utilizados para transferência e atualização de dados.
+- **Program**: interface de interação com o usuário via console.
+  
 ## Estrutura do Projeto
 
 ```text
@@ -160,9 +170,18 @@ dotnet add package ConsoleTables
 - Dívidas pagas registram automaticamente a data de pagamento
 - Dívidas abertas são ordenadas por maior valor
 
+## Próximas Etapas
+
+As próximas evoluções planejadas para o projeto são:
+
+- Implementação de uma API REST utilizando ASP.NET Core.
+- Integração com um frontend para consumo da API.
+- Migração da interface de console para interface web.
+
 ## Autor
 
-Luiz Felipe
-Autor
+Luiz Felipe Favoretto
 
-Luiz Felipe
+## Licença
+
+Projeto desenvolvido para fins acadêmicos e de aprendizado.
