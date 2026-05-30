@@ -67,7 +67,7 @@ namespace SistemaDividasConsole.Services
 
         public decimal TotalDividasAbertas()
         {
-            return context.Dividas.Where(d => d!.Pago).Sum(d => d.Valor);
+            return context.Dividas.Where(d => !d.Pago).Sum(d => d.Valor);
         }
     
     }
