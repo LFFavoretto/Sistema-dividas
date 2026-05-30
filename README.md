@@ -60,7 +60,7 @@ projeto/
 ### 1. Criar banco no MySQL
 
 ```sql
-CREATE DATABASE sistema_dividas;
+CREATE DATABASE NOME_DO_BANCO;
 ```
 
 ### 2. Executar o script SQL
@@ -105,7 +105,7 @@ appsettings.Development.json
 ```json
 {
   "ConnectionStrings": {
-    "Default": "server=localhost;port=3306;database=sistema_dividas;user=root;password=SUA_SENHA"
+     "Default": "server=localhost;port=3306;database=NOME_DO_BANCO;user=SEU_USUARIO;password=SUA_SENHA"
   }
 }
 ```
